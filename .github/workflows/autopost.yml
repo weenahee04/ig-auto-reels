@@ -13,6 +13,12 @@ on:
         description: 'บังคับใช้ component URL นี้ (เว้นว่าง = เลือกอัตโนมัติ)'
         required: false
         default: ''
+      source:
+        description: 'แหล่งคลิป'
+        type: choice
+        options: [auto, record, pull]
+        default: auto
+        required: false
 
 permissions:
   contents: write
@@ -51,6 +57,7 @@ jobs:
           BRAND_HANDLE: ${{ vars.BRAND_HANDLE || '' }}
           REC_SECONDS: ${{ vars.REC_SECONDS || '12' }}
           PICK: ${{ vars.PICK || 'random' }}
+          SOURCE: ${{ (github.event_name == 'workflow_dispatch' && inputs.source) || vars.SOURCE || 'auto' }}
         run: node src/cli.js run
 
       - name: Upload video artifact
