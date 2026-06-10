@@ -1,0 +1,21 @@
+{
+  "name": "ig-auto-reels",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Auto-record featured UI components from 21st.dev and publish them as Instagram Reels with full credit to the author",
+  "scripts": {
+    "scrape": "node src/cli.js scrape",
+    "make": "node src/cli.js make",
+    "post": "node src/cli.js run",
+    "dry": "node src/cli.js run --dry",
+    "ig:check": "node src/cli.js ig-check",
+    "token:refresh": "node src/cli.js refresh-token"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "puppeteer": "^24.0.0"
+  }
+}

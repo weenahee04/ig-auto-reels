@@ -1,0 +1,78 @@
+name: Auto-post Reel
+
+on:
+  schedule:
+    - cron: '30 12 * * *' # 19:30 เวลาไทย (UTC+7) ทุกวัน
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — ทำคลิปแต่ไม่โพสต์ลง IG'
+        type: boolean
+        default: false
+      force_url:
+        description: 'บังคับใช้ component URL นี้ (เว้นว่าง = เลือกอัตโนมัติ)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: autopost
+  cancel-in-progress: false
+
+jobs:
+  reel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install deps (includes Chrome for puppeteer)
+        run: npm ci
+
+      - name: Ensure ffmpeg
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -1
+
+      - name: Run pipeline
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '1' || '' }}
+          FORCE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.force_url || '' }}
+          BRAND_HANDLE: ${{ vars.BRAND_HANDLE || '' }}
+          REC_SECONDS: ${{ vars.REC_SECONDS || '12' }}
+          PICK: ${{ vars.PICK || 'random' }}
+        run: node src/cli.js run
+
+      - name: Upload video artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reel
+          path: |
+            out/*.mp4
+            out/*.caption.txt
+            out/*.cover.jpg
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Commit posted state
+        if: success()
+        run: |
+          if ! git diff --quiet -- data/posted.json; then
+            git config user.name "ig-auto-reels-bot"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/posted.json
+            git commit -m "chore: mark reel as posted [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push
+          fi

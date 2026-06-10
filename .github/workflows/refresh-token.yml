@@ -1,0 +1,41 @@
+name: Refresh IG token
+
+# IG long-lived token หมดอายุใน 60 วัน — workflow นี้ต่ออายุทุกเดือน
+# และอัปเดต secret อัตโนมัติ (ต้องตั้ง secret GH_PAT เป็น classic PAT scope `repo`)
+# ถ้าไม่ตั้ง GH_PAT: ต่ออายุเองในเครื่องด้วย `npm run token:refresh` แล้วอัปเดต secret
+
+on:
+  schedule:
+    - cron: '0 3 1 * *' # ทุกวันที่ 1 ของเดือน
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: '1'
+      - name: Refresh and store new token
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$IG_ACCESS_TOKEN" ]; then echo "no IG_ACCESS_TOKEN — skip"; exit 0; fi
+          NEW=$(node src/cli.js refresh-token | tail -1)
+          if [ -z "$NEW" ]; then echo "refresh failed"; exit 1; fi
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::ต่ออายุ token สำเร็จ แต่ไม่มี secret GH_PAT จึงอัปเดต secret อัตโนมัติไม่ได้ — โปรดตั้ง IG_ACCESS_TOKEN ใหม่เอง"
+            exit 0
+          fi
+          echo "$NEW" | gh secret set IG_ACCESS_TOKEN --repo "$GITHUB_REPOSITORY"
+          echo "✅ secret IG_ACCESS_TOKEN updated"
