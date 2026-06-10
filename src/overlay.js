@@ -119,7 +119,7 @@ export function buildOverlay(data) {
 
   root.innerHTML = `
     <div class="chip title">
-      <div class="kicker">✦ 21st.dev · featured component</div>
+      <div class="kicker">✦ today's featured ui</div>
       <div class="name">${esc(data.title)}</div>
     </div>
     <div class="chip credit">
@@ -127,7 +127,7 @@ export function buildOverlay(data) {
       <div class="who">
         <div class="by">Made by</div>
         <div class="nm">${esc(data.author || data.username)}</div>
-        <div class="src">21st.dev/${esc(data.username)}</div>
+        ${data.username ? `<div class="src">@${esc(data.username)}</div>` : ''}
       </div>
       ${likes}
     </div>
@@ -147,6 +147,7 @@ export function buildOverlay(data) {
   window.__igOverlayIn = () => root.classList.add('on')
   window.__igOutro = () => root.querySelector('.outro').classList.add('show')
   window.__igCursorShow = () => { cur.style.opacity = '1' }
+  window.__igCursorSet = (x, y) => { cur.style.left = x + 'px'; cur.style.top = y + 'px' }
   window.__igCursorTo = (x, y, ms) => {
     if (anim) cancelAnimationFrame(anim)
     const x0 = parseFloat(cur.style.left), y0 = parseFloat(cur.style.top)

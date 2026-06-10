@@ -23,11 +23,11 @@ function pick(arr, seed) {
 export function buildCaption(comp) {
   const author = comp.authorName || comp.authorUsername || 'community author'
   const lines = [
-    `✨ "${comp.name}" — UI component สุดเนียนจากคอมมูนิตี้ 21st.dev`,
+    `✨ "${comp.name}" — UI component สุดเนียนประจำวันนี้`,
     '',
     pick(HOOKS, comp.demoId || comp.name),
     '',
-    `🎨 Credit ผลงานโดย: ${author}${comp.authorUsername ? ` (21st.dev/${comp.authorUsername})` : ''}`,
+    `🎨 Credit ผลงานโดย: ${author}`,
     `🔗 โค้ดเต็ม + ลองเล่นได้ที่: ${comp.url}`,
     '',
     'ติดตามไว้ มี UI สวยๆ มาให้ดูทุกวัน 🤍',
