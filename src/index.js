@@ -3,7 +3,8 @@ import path from 'node:path'
 import { CFG } from './config.js'
 import { launchBrowser } from './browser.js'
 import { scrapeFeatured, resolveBundleUrl, scrapeComponentMeta } from './scrape.js'
-import { recordComponent } from './record.js'
+import { recordComponent, recordPullStage } from './record.js'
+import { deriveVideoUrl, urlOk, preparePullStage } from './pull.js'
 import { makeAudio, pickMusicFile } from './audio.js'
 import { composeVideo } from './compose.js'
 import { buildCaption } from './caption.js'
@@ -14,6 +15,12 @@ const slugify = (s) => String(s).toLowerCase().replace(/[^\w]+/g, '-').replace(/
 
 export async function pickComponent(page, state) {
   if (CFG.forceUrl) {
+    const wanted = new URL(CFG.forceUrl).pathname
+    try {
+      const list = await scrapeFeatured(page)
+      const hit = list.find(c => c.path === wanted)
+      if (hit) return hit
+    } catch { /* featured list unavailable — fall through */ }
     const bundleUrl = await resolveBundleUrl(page, CFG.forceUrl)
     const meta = await scrapeComponentMeta(page, CFG.forceUrl)
     return { ...meta, bundleUrl }
@@ -26,7 +33,6 @@ export async function pickComponent(page, state) {
   const pool = CFG.pick === 'top' ? fresh.slice(0, 1) : fresh.slice(0, Math.min(12, fresh.length))
   const comp = pool[Math.floor(Math.random() * pool.length)]
   console.log(`[pick] "${comp.name}" by ${comp.authorName || comp.authorUsername} (♥${comp.likes})`)
-  comp.bundleUrl = await resolveBundleUrl(page, comp.url)
   return comp
 }
 
@@ -39,13 +45,28 @@ export async function runAll({ dry = false } = {}) {
   const state = await loadState()
 
   const browser = await launchBrowser()
-  let comp, rec
+  let comp, rec = null
   try {
     const page = await browser.newPage()
     await page.setViewport({ width: 1280, height: 900 })
     comp = await pickComponent(page, state)
-    if (!comp.bundleUrl) throw new Error('No bundle URL found for component')
-    rec = await recordComponent(page, comp)
+
+    if (CFG.source === 'pull' || CFG.source === 'auto') {
+      const videoUrl = deriveVideoUrl(comp.previewImg)
+      if (videoUrl && await urlOk(videoUrl)) {
+        console.log(`[pull] using prerendered demo video: ${videoUrl}`)
+        const stageUrl = await preparePullStage(videoUrl)
+        rec = await recordPullStage(page, comp, stageUrl)
+      } else if (CFG.source === 'pull') {
+        throw new Error('No prerendered video for this component — use SOURCE=auto (fallback to recording) instead')
+      } else {
+        console.log('[pull] no prerendered video — falling back to live recording')
+      }
+    }
+    if (!rec) {
+      if (!comp.bundleUrl) comp.bundleUrl = await resolveBundleUrl(page, comp.url)
+      rec = await recordComponent(page, comp)
+    }
   } finally {
     await browser.close().catch(() => {})
   }

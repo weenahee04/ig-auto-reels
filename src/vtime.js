@@ -50,6 +50,14 @@ export const VT_ENGINE = `(() => {
         try { a.currentTime = Math.max(0, vt - a.__vtStart) } catch {}
       }
     } catch {}
+    try {
+      for (const v of document.querySelectorAll('video')) {
+        if (v.readyState >= 2 && v.duration) {
+          try { if (!v.paused) v.pause() } catch {}
+          try { v.currentTime = (vt / 1000) % v.duration } catch {}
+        }
+      }
+    } catch {}
     const q = rafQ; rafQ = []
     const ts = p0 + vt
     for (const r of q) { try { r.cb(ts) } catch {} }

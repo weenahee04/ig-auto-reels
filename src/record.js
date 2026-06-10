@@ -235,6 +235,45 @@ async function recordStepped(page, comp, opts = {}) {
   return out
 }
 
+// ---------- pull-stage recorder: prerendered CDN video framed in our stage ----------
+
+export async function recordPullStage(page, comp, stageUrl, opts = {}) {
+  const seconds = opts.seconds ?? CFG.recordSeconds
+  await page.setViewport({ width: CFG.viewW, height: CFG.viewH, deviceScaleFactor: CFG.dpr })
+  await page.evaluateOnNewDocument(VT_ENGINE)
+  console.log(`[record] (pull stage) ${stageUrl}`)
+  await page.goto(stageUrl, { waitUntil: 'load', timeout: 60000 })
+  await page.waitForFunction(() => {
+    const vs = [...document.querySelectorAll('video')]
+    return vs.length && vs.every(v => v.readyState >= 3 && v.duration > 0)
+  }, { timeout: 20000 }).catch(() => console.warn('[record] video readiness timeout — continuing'))
+
+  const installed = await page.evaluate(() => !!window.__vtInstalled).catch(() => false)
+  if (!installed) throw new Error('virtual-time engine missing on stage page')
+  for (let k = 0; k < 12; k++) await page.evaluate(s => window.__vtTick(s), 1000 / FPS)
+
+  await injectOverlay(page, comp)
+  const cdp = await page.createCDPSession()
+  const frames = []
+  const total = Math.round(seconds * FPS)
+  const T = (sec) => Math.round(sec * FPS)
+  for (let k = 0; k < total; k++) {
+    if (k === T(0.3)) await page.evaluate(() => window.__igOverlayIn())
+    if (k === T(seconds - 2.2)) await page.evaluate(() => window.__igOutro())
+    await page.evaluate(s => window.__vtTick(s), 1000 / FPS)
+    try {
+      const r = await cdp.send('Page.captureScreenshot', {
+        format: 'jpeg', quality: 85, fromSurface: true,
+        clip: { x: 0, y: 0, width: CFG.viewW, height: CFG.viewH, scale: CFG.dpr },
+      })
+      frames.push({ data: r.data, ts: k / FPS })
+    } catch { /* ffconcat durations absorb a missed frame */ }
+  }
+  const out = await persistFrames(frames, seconds)
+  console.log(`[record] ${out.frameCount} frames @ exact ${FPS}fps (pull stage)`)
+  return out
+}
+
 // ---------- realtime (wall clock) recorder — fallback ----------
 
 async function recordRealtime(page, comp, opts = {}) {

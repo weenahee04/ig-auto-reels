@@ -71,6 +71,7 @@ gh workflow run autopost.yml
 - `BRAND_HANDLE` — โชว์ @handle ของคุณมุมขวาบนของคลิป
 - `REC_SECONDS` — ความยาวคลิป (ค่าเริ่มต้น 12 วิ)
 - `PICK` — `random` (สุ่มจาก top 12 ที่ยังไม่โพสต์) หรือ `top` (อันดับ 1 เสมอ)
+- `SOURCE` — `record` (อัด live demo เอง แนวตั้งเต็มจอ มี interaction, ค่าเริ่มต้น) | `pull` (ใช้วิดีโอ demo สำเร็จรูปจาก CDN วางในการ์ดกลางจอ+พื้นเบลอ เร็วกว่ามาก) | `auto` (pull ถ้ามีไฟล์ ไม่มีก็อัดเอง)
 - `FORCE_URL` — บังคับอัดตัวเจาะจง เช่น `https://21st.dev/community/components/aceternity/sparkles/default`
 
 🎵 อยากใช้เพลงตัวเอง: วางไฟล์ `.mp3` ใน `assets/music/` (เลือกเพลงปลอดลิขสิทธิ์เท่านั้น ไม่งั้น IG อาจปิดเสียง/ลบคลิป) — ถ้าโฟลเดอร์ว่าง ระบบจะสังเคราะห์เพลง ambient ให้เอง

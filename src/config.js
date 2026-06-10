@@ -21,6 +21,8 @@ export const CFG = {
 
   recordSeconds: clampNum(process.env.REC_SECONDS, 8, 30, 12),
   pick: process.env.PICK || 'random',
+  // record = อัด live demo เอง (ค่าเริ่มต้น) | pull = ใช้วิดีโอสำเร็จรูปจาก CDN | auto = pull ถ้ามี ไม่มีก็อัด
+  source: (process.env.SOURCE || 'record').toLowerCase(),
   forceUrl: process.env.FORCE_URL || '',
   brandHandle: process.env.BRAND_HANDLE || '',
   dryRun: process.env.DRY_RUN === '1' || process.env.DRY_RUN === 'true',
