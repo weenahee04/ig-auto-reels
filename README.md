@@ -62,7 +62,7 @@ gh workflow run autopost.yml
 | คำสั่ง | ทำอะไร |
 |---|---|
 | `npm run scrape` | ดูรายชื่อ featured components + ยอดไลก์ |
-| `npm run dry` | ทำคลิปเต็มขั้นตอนแต่ไม่โพสต์ (ต้องมี ffmpeg — บน Windows เครื่องนี้แนะนำรันบน Actions แทน) |
+| `npm run dry` | ทำคลิปเต็มขั้นตอนแต่ไม่โพสต์ — ได้ไฟล์ใน `out/` (ต้องมี ffmpeg: `winget install Gyan.FFmpeg` แล้วระบบหาให้เองอัตโนมัติ) |
 | `npm run post` | ทำคลิป + โพสต์จริง |
 | `npm run ig:check` | เช็คว่า token ใช้ได้ |
 | `npm run token:refresh` | ต่ออายุ token (พิมพ์ token ใหม่ออกมา) |

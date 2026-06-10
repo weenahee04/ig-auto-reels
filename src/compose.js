@@ -1,10 +1,28 @@
 import fs from 'node:fs/promises'
+import fsSync from 'node:fs'
 import path from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
 import { CFG } from './config.js'
 
+// winget's Links\ffmpeg.exe symlink fails under Node spawn (ENOENT) — locate the real exe
+function wingetFfmpeg() {
+  if (process.platform !== 'win32' || !process.env.LOCALAPPDATA) return []
+  const base = path.join(process.env.LOCALAPPDATA, 'Microsoft', 'WinGet', 'Packages')
+  const found = []
+  try {
+    for (const d of fsSync.readdirSync(base)) {
+      if (!d.startsWith('Gyan.FFmpeg')) continue
+      for (const sub of fsSync.readdirSync(path.join(base, d))) {
+        const exe = path.join(base, d, sub, 'bin', 'ffmpeg.exe')
+        if (fsSync.existsSync(exe)) found.push(exe)
+      }
+    }
+  } catch { /* no winget dir */ }
+  return found
+}
+
 export function findFfmpeg() {
-  const candidates = [process.env.FFMPEG_PATH, 'ffmpeg'].filter(Boolean)
+  const candidates = [process.env.FFMPEG_PATH, 'ffmpeg', ...wingetFfmpeg()].filter(Boolean)
   for (const c of candidates) {
     try {
       const r = spawnSync(c, ['-version'], { stdio: 'pipe' })
