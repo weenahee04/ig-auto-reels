@@ -57,6 +57,22 @@ gh workflow run autopost.yml
 
 ---
 
+## 🏠 รันบนคอมตัวเอง (ไม่ต้องใช้ GitHub)
+
+ถ้าไม่อยากพึ่งคลาวด์ ใช้ Windows Task Scheduler ในเครื่องได้เลย:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install-task.ps1
+```
+
+จะได้งานชื่อ `ig-auto-reels-daily` รันทุกวัน **19:30** อัตโนมัติ (ปลุกเครื่องจาก sleep ได้ / ถ้าเครื่องปิดอยู่จะรันชดเชยทันทีที่เปิด) — ผลรันดูได้ที่โฟลเดอร์ `logs\`
+
+ใส่ token: เปิดไฟล์ `.env` แล้ววางค่า `IG_ACCESS_TOKEN=...` — ตราบใดที่ยังว่าง ระบบจะทำคลิปเก็บใน `out/` แบบ dry-run ไม่โพสต์จริง
+
+> ⚠️ ถ้าวันหนึ่งเปิดใช้ GitHub Actions ด้วย ให้ปิดทางใดทางหนึ่ง (ลบ task: `Unregister-ScheduledTask ig-auto-reels-daily`) เพื่อไม่ให้โพสต์ซ้ำซ้อน
+
+---
+
 ## 🖥️ คำสั่งในเครื่อง
 
 | คำสั่ง | ทำอะไร |
